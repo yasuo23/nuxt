@@ -1,102 +1,46 @@
-import { ref, onMounted } from 'vue'
-import { TRPCClientError } from '@trpc/client'
 import type { inferRouterOutputs } from '@trpc/server'
+import type { AppRouter } from '../../server/trpc/routers'
 
 type RouterOutput = inferRouterOutputs<AppRouter>
 type User = RouterOutput['auth']['getSession']
 
-export const useAuth = () => {
+export function useAuth() {
   const { $client } = useNuxtApp()
+  const user = useState<User>('auth_user', () => null)
+  const loading = useState<boolean>('auth_loading', () => false)
+  const error = useState<string>('auth_error', () => '')
 
-  // --- STATE ---
-  const user = ref<User>(null)
-  const username = ref('')
-  const authError = ref('')
-
-  const secretMessage = ref('')
-  const secretMessageError = ref('')
-
-  const newTodoText = ref('')
-  const todoError = ref('')
-  const { data: todos, refresh: refreshTodos } = useAsyncData('todos', () =>
-    $client.todo.getTodos.query()
-  )
-
-  // --- HELPERS ---
-  const handleTrpcError = (err: unknown) => {
-    if (err instanceof TRPCClientError) return err.message
-    return 'An unknown error occurred.'
-  }
-
-  // --- AUTH ---
-  const fetchSession = async () => {
+  const loadSession = async () => {
     try {
+      loading.value = true
       user.value = await $client.auth.getSession.query()
     } catch {
       user.value = null
+    } finally {
+      loading.value = false
     }
   }
 
-  const login = async () => {
-    if (!username.value) return
-    authError.value = ''
+  const login = async (username: string) => {
+    error.value = ''
+    loading.value = true
     try {
-      user.value = await $client.auth.login.mutate({ username: username.value })
-    } catch (err) {
-      authError.value = handleTrpcError(err)
+      user.value = await $client.auth.login.mutate({ username })
+      return true
+    } catch (e: any) {
+      error.value = e?.message || 'Login failed'
+      return false
+    } finally {
+      loading.value = false
     }
   }
 
   const logout = async () => {
     await $client.auth.logout.mutate()
     user.value = null
-    secretMessage.value = ''
-    secretMessageError.value = ''
   }
 
-  // --- SECRET MESSAGE ---
-  const fetchSecretMessage = async () => {
-    secretMessageError.value = ''
-    secretMessage.value = ''
-    try {
-      secretMessage.value = await $client.auth.getSecretMessage.query()
-    } catch (err) {
-      secretMessageError.value = handleTrpcError(err)
-    }
-  }
-
-  // --- TODOS ---
-  const addTodo = async () => {
-    if (newTodoText.value.trim() === '') return
-    todoError.value = ''
-    try {
-      await $client.todo.addTodo.mutate({ text: newTodoText.value })
-      newTodoText.value = ''
-      await refreshTodos()
-    } catch (err) {
-      todoError.value = handleTrpcError(err)
-    }
-  }
-
-  // --- INIT ---
-  onMounted(fetchSession)
-
-  return {
-    // State
-    user,
-    username,
-    authError,
-    secretMessage,
-    secretMessageError,
-    newTodoText,
-    todoError,
-    todos,
-
-    // Actions
-    fetchSession,
-    login,
-    logout,
-    fetchSecretMessage,
-    addTodo,
-  }
+  return { user, loading, error, loadSession, login, logout }
 }
+
+

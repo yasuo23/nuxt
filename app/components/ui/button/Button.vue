@@ -22,6 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
     data-slot="button"
     :as="as"
     :as-child="asChild"
+    v-bind="$attrs"
     :class="cn(buttonVariants({ variant, size }), props.class)"
   >
     <slot />

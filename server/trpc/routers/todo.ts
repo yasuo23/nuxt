@@ -62,13 +62,18 @@ export const todoRouter = router({
   setCompleted: protectedProcedure
     .input(z.object({ id: z.string(), completed: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
-      // ... same logic
+      return await ctx.prisma.todo.update({
+        where: { id: input.id },
+        data: { completed: input.completed },
+      });
     }),
 
   // DELETE a todo - Protected
   deleteTodo: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // ... same logic
+      return await ctx.prisma.todo.delete({
+        where: { id: input.id },
+      });
     }),
 });

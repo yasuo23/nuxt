@@ -84,7 +84,7 @@
 
 
 import { initTRPC, TRPCError } from '@trpc/server';
-import { H3Event } from 'h3';
+import { H3Event, getCookie } from 'h3';
 import jwt from 'jsonwebtoken';
 import { prisma } from './prisma';
 import { users } from './users';

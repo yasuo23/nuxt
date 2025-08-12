@@ -27,9 +27,19 @@ export default defineNuxtConfig({
      * Directory that the component lives in.
      * @default "./components/ui"
      */
-    componentDir: './components/ui'
+    componentDir: './app/components/ui'
   }, alias :{
-    "@" : fileURLToPath(new URL('./', import.meta.url)),
+    // Point '@' to the app directory so imports like '@/lib/utils' resolve to 'app/lib/utils'
+    "@" : fileURLToPath(new URL('./app', import.meta.url)),
+    // Optional: root alias if needed
+    "#root": fileURLToPath(new URL('./', import.meta.url)),
 
+  },
+
+  nitro: {
+    // Avoid bundling Prisma to prevent resolution of internal ".prisma" path
+    externals: {
+      external: ['@prisma/client', '.prisma/client'],
+    },
   }
 })
